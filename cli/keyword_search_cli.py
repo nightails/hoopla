@@ -1,6 +1,8 @@
 import argparse
 import json
-import string
+
+from text import process_text
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -17,8 +19,6 @@ def main() -> None:
             movies = movie_search(args.query)
             for movie in movies:
                 print(movie["title"])
-
-            pass
         case _:
             parser.print_help()
 
@@ -29,20 +29,14 @@ def movie_search(keyword) -> list[dict]:
         data = json.load(file)
     movies = data["movies"]
 
+    keyword_tokens = process_text(keyword)
+
     for movie in movies:
-        if any(token in sanitize_str(movie["title"]) for token in tokenize_str(keyword)):
+        title_tokens = process_text(movie["title"])
+        if any(keyword_token in title_token for keyword_token in keyword_tokens for title_token in title_tokens):
             movies_list.append(movie)
 
     return movies_list[:5]
-
-def sanitize_str(t: str) -> str:
-    punc_map = str.maketrans("", "", string.punctuation)
-    return t.translate(punc_map).lower()
-
-def tokenize_str(t: str) -> list[str]:
-    t = sanitize_str(t)
-    tokens = t.split()
-    return tokens
 
 if __name__ == "__main__":
     main()

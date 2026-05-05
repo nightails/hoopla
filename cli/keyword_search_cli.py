@@ -29,7 +29,7 @@ def movie_search(keyword) -> list[dict]:
     movies = data["movies"]
         
     for movie in movies:
-        if keyword in movie["title"]:
+        if keyword.lower() in movie["title"].lower():
             movies_list.append(movie)
             
     return movies_list[:5]

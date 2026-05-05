@@ -1,5 +1,6 @@
 import argparse
 import json
+import string
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -29,10 +30,14 @@ def movie_search(keyword) -> list[dict]:
     movies = data["movies"]
         
     for movie in movies:
-        if keyword.lower() in movie["title"].lower():
+        if keyword.lower() in sanitize_title(movie["title"]):
             movies_list.append(movie)
             
     return movies_list[:5]
+
+def sanitize_title(title: str) -> str:
+    punc_map = str.maketrans("", "", string.punctuation)
+    return title.translate(punc_map).lower()
 
 if __name__ == "__main__":
     main()

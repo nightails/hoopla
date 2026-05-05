@@ -28,16 +28,21 @@ def movie_search(keyword) -> list[dict]:
     with open("data/movies.json", "r", encoding="utf-8") as file:
         data = json.load(file)
     movies = data["movies"]
-        
+
     for movie in movies:
-        if keyword.lower() in sanitize_title(movie["title"]):
+        if any(token in sanitize_str(movie["title"]) for token in tokenize_str(keyword)):
             movies_list.append(movie)
-            
+
     return movies_list[:5]
 
-def sanitize_title(title: str) -> str:
+def sanitize_str(t: str) -> str:
     punc_map = str.maketrans("", "", string.punctuation)
-    return title.translate(punc_map).lower()
+    return t.translate(punc_map).lower()
+
+def tokenize_str(t: str) -> list[str]:
+    t = sanitize_str(t)
+    tokens = t.split()
+    return tokens
 
 if __name__ == "__main__":
     main()

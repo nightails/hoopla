@@ -1,9 +1,17 @@
 import string
 
+from nltk.stem import PorterStemmer
+
 def process_text(t: str) -> list[str]:
     t = remove_punctuation(t.lower())
     tokens = tokenize_string(t)
-    return remove_stop_words(tokens)
+    tokens = remove_stop_words(tokens)
+
+    stemmer = PorterStemmer()
+    for i in range(len(tokens)):
+        tokens[i] = stemmer.stem(tokens[i])
+
+    return tokens
 
 def remove_punctuation(t: str) -> str:
     punc_map = str.maketrans("", "", string.punctuation)

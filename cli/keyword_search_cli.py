@@ -1,5 +1,4 @@
 import argparse
-import json
 import sys
 
 from pathlib import Path
@@ -21,6 +20,10 @@ def main() -> None:
 
     build_parser = subparsers.add_parser("build", help="Build and save inverted index")
 
+    tf_parser = subparsers.add_parser("tf", help="Get frequency for a term")
+    tf_parser.add_argument("movie_id", type=int, help="Movie ID")
+    tf_parser.add_argument("term", type=str, help="Term to search for")
+
     args = parser.parse_args()
 
     match args.command:
@@ -30,7 +33,18 @@ def main() -> None:
             for movie in movies:
                 print(f"id: {movie['id']}\ntitle: {movie['title']}\n")
         case "build":
-            build_index()
+            index = InvertedIndex()
+            index.build()
+            index.save()
+        case "tf":
+            movies_index = InvertedIndex()
+            try:
+                movies_index.load()
+            except FileNotFoundError as err:
+                print(err)
+                exit()
+            tf = movies_index.get_tf(args.movie_id, args.term)
+            print(f"Term '{args.term}' frequency in movie {args.movie_id}: {tf}")
         case _:
             parser.print_help()
 
@@ -52,11 +66,6 @@ def movie_search(keyword) -> list[dict]:
             break
 
     return movies_list[:5]
-
-def build_index():
-    index = InvertedIndex()
-    index.build()
-    index.save()
 
 if __name__ == "__main__":
     main()

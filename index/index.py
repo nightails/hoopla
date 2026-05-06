@@ -2,7 +2,7 @@ import json
 import os
 import pickle
 
-from cli.text import process_text
+from text import process_text
 
 
 class InvertedIndex:

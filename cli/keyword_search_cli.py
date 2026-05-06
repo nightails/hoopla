@@ -28,25 +28,28 @@ def main() -> None:
             print(f"Searching for: {args.query}")
             movies = movie_search(args.query)
             for movie in movies:
-                print(movie["title"])
+                print(f"id: {movie['id']}\ntitle: {movie['title']}\n")
         case "build":
             build_index()
         case _:
             parser.print_help()
 
 def movie_search(keyword) -> list[dict]:
-    movies_list: list[dict] = []
-
-    with open("data/movies.json", "r", encoding="utf-8") as file:
-        data = json.load(file)
-    movies = data["movies"]
-
     keyword_tokens = process_text(keyword)
 
-    for movie in movies:
-        title_tokens = process_text(movie["title"])
-        if any(keyword_token in title_token for keyword_token in keyword_tokens for title_token in title_tokens):
-            movies_list.append(movie)
+    movies_index = InvertedIndex()
+    try:
+        movies_index.load()
+    except FileNotFoundError as err:
+        print(err)
+        exit()
+
+    movies_list: list[dict] = []
+
+    for token in keyword_tokens:
+        movies_list.extend(movies_index.get_documents(token))
+        if len(movies_list) >= 5:
+            break
 
     return movies_list[:5]
 
@@ -54,12 +57,6 @@ def build_index():
     index = InvertedIndex()
     index.build()
     index.save()
-
-    docs = index.get_documents('merida')
-    if docs:
-        print(f"First document for token 'merida' = {docs[0]}")
-    else:
-        print("No documents found for token 'merida'")
 
 if __name__ == "__main__":
     main()

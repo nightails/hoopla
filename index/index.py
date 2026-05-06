@@ -4,7 +4,6 @@ import os
 import pickle
 
 from text import process_text
-from text.sanitize_text import tokenize_string
 
 
 class InvertedIndex:
@@ -29,11 +28,10 @@ class InvertedIndex:
         return sorted(docs, key=lambda x: x['id'])
 
     def get_tf(self, doc_id, term) -> int:
-        term = term.lower()
-        term = tokenize_string(term)
-        if len(term) > 1:
-            raise ValueError("Term must be a single token")
-        return self.term_frequencies.get(doc_id, collections.Counter()).get(term, 0)
+        tokens = process_text(term)
+        if len(tokens) != 1:
+            raise ValueError("Term must be a single searchable token")
+        return self.term_frequencies.get(doc_id, collections.Counter()).get(tokens[0], 0)
 
     def build(self):
         with open("data/movies.json", "r", encoding="utf-8") as file:

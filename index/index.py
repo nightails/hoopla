@@ -35,10 +35,12 @@ class InvertedIndex:
         os.makedirs("cache", exist_ok=True)
         pickle.dump(self.index, open("cache/index.pkl", "wb"))
         pickle.dump(self.docmap, open("cache/docmap.pkl", "wb"))
+        pickle.dump(self.term_frequencies, open("cache/term_requencies.pkl", "wb"))
 
     def load(self):
         if os.path.exists("cache/index.pkl") and os.path.exists("cache/docmap.pkl"):
             self.index = pickle.load(open("cache/index.pkl", "rb"))
             self.docmap = pickle.load(open("cache/docmap.pkl", "rb"))
+            self.term_frequencies= pickle.load(open("cache/term_frequencies.pkl", "rb"))
         else:
             raise FileNotFoundError("Index files not found. Please build the index first.")

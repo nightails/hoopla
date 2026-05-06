@@ -9,6 +9,7 @@ class InvertedIndex:
     def __init__(self):
         self.index: dict[str, set[int]] = {}
         self.docmap: dict[int, dict] = {}
+        self.term_frequencies: dict[int, collections.Counter] = {}
 
     def __add_document(self, doc_id: int, text: str):
         content_tokens = process_text(text)

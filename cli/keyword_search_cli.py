@@ -28,6 +28,10 @@ def main() -> None:
     idf_parser = subparsers.add_parser("idf", help="Get document frequency for a term")
     idf_parser.add_argument("term", type=str, help="Term to search for")
 
+    tfidf_parser = subparsers.add_parser("tfidf", help="Get TF-IDF score for a term in a movie")
+    tfidf_parser.add_argument("movie_id", type=int, help="Movie ID")
+    tfidf_parser.add_argument("term", type=str, help="Term to search for")
+
     args = parser.parse_args()
 
     match args.command:
@@ -63,7 +67,19 @@ def main() -> None:
 
             idf = math.log(total_doc_count / total_match_doc_count)
             print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
+        case "tfidf":
+            movies_index = InvertedIndex()
+            try:
+                movies_index.load()
+            except FileNotFoundError as err:
+                print(err)
+                exit()
 
+            term = process_text(args.term)[0]
+            tf = movies_index.get_tf(args.movie_id, term)
+            idf = math.log((len(movies_index.docmap) + 1) / (len(movies_index.get_documents(term)) + 1))
+            tfidf = tf * idf
+            print(f"TF-IDF score of '{args.term}' in document {args.movie_id}: {tfidf:.2f}")
         case _:
             parser.print_help()
 

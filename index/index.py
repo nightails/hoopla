@@ -15,6 +15,8 @@ class InvertedIndex:
         content_tokens = process_text(text)
         for token in content_tokens:
             self.index[token] = self.index.get(token, set()).union({doc_id})
+            self.term_frequencies[doc_id] = self.term_frequencies.get(doc_id, collections.Counter())
+            self.term_frequencies[doc_id][token] += 1
 
     def get_documents(self, term: str) -> list:
         term = term.lower()

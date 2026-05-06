@@ -17,8 +17,11 @@ class InvertedIndex:
 
     def get_documents(self, term: str) -> list:
         term = term.lower()
-        doc_ids = list(self.index.get(term, set()))
-        return sorted(doc_ids)
+        doc_ids = self.index.get(term, set())
+        docs = []
+        for id in doc_ids:
+            docs.append(self.docmap[id])
+        return sorted(docs, key=lambda x: x['id'])
 
     def build(self):
         with open("data/movies.json", "r", encoding="utf-8") as file:

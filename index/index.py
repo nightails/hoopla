@@ -47,7 +47,7 @@ class InvertedIndex:
         os.makedirs("cache", exist_ok=True)
         pickle.dump(self.index, open("cache/index.pkl", "wb"))
         pickle.dump(self.docmap, open("cache/docmap.pkl", "wb"))
-        pickle.dump(self.term_frequencies, open("cache/term_requencies.pkl", "wb"))
+        pickle.dump(self.term_frequencies, open("cache/term_frequencies.pkl", "wb"))
 
     def load(self):
         if os.path.exists("cache/index.pkl") and os.path.exists("cache/docmap.pkl"):

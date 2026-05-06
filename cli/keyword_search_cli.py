@@ -1,4 +1,5 @@
 import argparse
+import math
 import sys
 
 from pathlib import Path
@@ -24,6 +25,9 @@ def main() -> None:
     tf_parser.add_argument("movie_id", type=int, help="Movie ID")
     tf_parser.add_argument("term", type=str, help="Term to search for")
 
+    idf_parser = subparsers.add_parser("idf", help="Get document frequency for a term")
+    idf_parser.add_argument("term", type=str, help="Term to search for")
+
     args = parser.parse_args()
 
     match args.command:
@@ -45,6 +49,21 @@ def main() -> None:
                 exit()
             tf = movies_index.get_tf(args.movie_id, args.term)
             print(f"Term '{args.term}' frequency in movie {args.movie_id}: {tf}")
+        case "idf":
+            term = process_text(args.term)[0]
+            movies_index = InvertedIndex()
+            try:
+                movies_index.load()
+            except FileNotFoundError as err:
+                print(err)
+                exit()
+
+            total_doc_count = len(movies_index.docmap) + 1
+            total_match_doc_count = len(movies_index.get_documents(term)) + 1
+
+            idf = math.log(total_doc_count / total_match_doc_count)
+            print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
+
         case _:
             parser.print_help()
 

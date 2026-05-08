@@ -2,19 +2,24 @@
 
 import argparse
 
-from semantic_search import verify_model
+from semantic_search import verify_model, embed_text
 
 def main():
     parser = argparse.ArgumentParser(description="Semantic Search CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    verify_parser = subparsers.add_parser("verify", help="Verify Sentence-Transformers model")
+    subparsers.add_parser("verify", help="Verify Sentence-Transformers model")
+    embed_text_parser = subparsers.add_parser("embed_text", help="Generate embeddings from text")
+    embed_text_parser.add_argument("text", type=str, help="Text to be embeddings")
+
 
     args = parser.parse_args()
 
     match args.command:
         case "verify":
             verify_model()
+        case "embed_text":
+            embed_text(args.text)
         case _:
             parser.print_help()
 

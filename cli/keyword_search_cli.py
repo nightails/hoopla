@@ -1,8 +1,7 @@
 import argparse
-import math
 
-from text import process_text
-from index import bm25_idf_command, BM25_K1, bm25_tf_command, InvertedIndex
+from search_utils import BM25_K1, bm25_idf_command, bm25_tf_command, BM25_B, movie_search, idf_command, tf_command, \
+    tfidf_command, build_command
 
 
 def main() -> None:
@@ -32,6 +31,7 @@ def main() -> None:
     bm25_tf_parser.add_argument("movie_id", type=int, help="Movie ID")
     bm25_tf_parser.add_argument("term", type=str, help="Term to get BM25 TF score for")
     bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
+    bm25_tf_parser.add_argument("b", type=float, nargs='?', default=BM25_B, help="Tunable BM25 b parameter")
 
     args = parser.parse_args()
 
@@ -42,44 +42,15 @@ def main() -> None:
             for movie in movies:
                 print(f"id: {movie['id']}\ntitle: {movie['title']}\n")
         case "build":
-            index = InvertedIndex()
-            index.build()
-            index.save()
+            build_command()
         case "tf":
-            movies_index = InvertedIndex()
-            try:
-                movies_index.load()
-            except FileNotFoundError as err:
-                print(err)
-                exit()
-            tf = movies_index.get_tf(args.movie_id, args.term)
+            tf = tf_command(args.movie_id, args.term)
             print(f"Term '{args.term}' frequency in movie {args.movie_id}: {tf}")
         case "idf":
-            term = process_text(args.term)[0]
-            movies_index = InvertedIndex()
-            try:
-                movies_index.load()
-            except FileNotFoundError as err:
-                print(err)
-                exit()
-
-            total_doc_count = len(movies_index.docmap) + 1
-            total_match_doc_count = len(movies_index.get_documents(term)) + 1
-
-            idf = math.log(total_doc_count / total_match_doc_count)
+            idf = idf_command(args.term)
             print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
         case "tfidf":
-            movies_index = InvertedIndex()
-            try:
-                movies_index.load()
-            except FileNotFoundError as err:
-                print(err)
-                exit()
-
-            term = process_text(args.term)[0]
-            tf = movies_index.get_tf(args.movie_id, term)
-            idf = math.log((len(movies_index.docmap) + 1) / (len(movies_index.get_documents(term)) + 1))
-            tfidf = tf * idf
+            tfidf = tfidf_command(args.movie_id, args.term)
             print(f"TF-IDF score of '{args.term}' in document {args.movie_id}: {tfidf:.2f}")
 
         case "bm25idf":
@@ -92,26 +63,6 @@ def main() -> None:
 
         case _:
             parser.print_help()
-
-def movie_search(keyword) -> list[dict]:
-    keyword_tokens = process_text(keyword)
-
-    movies_index = InvertedIndex()
-    try:
-        movies_index.load()
-    except FileNotFoundError as err:
-        print(err)
-        exit()
-
-    movies_list: list[dict] = []
-
-    for token in keyword_tokens:
-        movies_list.extend(movies_index.get_documents(token))
-        if len(movies_list) >= 5:
-            break
-
-    return movies_list[:5]
-
 
 
 if __name__ == "__main__":

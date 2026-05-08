@@ -4,7 +4,7 @@ import math
 import os
 import pickle
 
-from text import process_text
+from .text import process_text
 
 
 BM25_K1 = 1.5
@@ -52,41 +52,74 @@ class InvertedIndex:
 
     def get_bm25_tf(self, doc_id, term, k1=BM25_K1, b=BM25_B) -> float:
         tf = self.get_tf(doc_id, term)
-        len_norm = 1 - b + b * (self.doc_lengths[doc_id] / self.__get_avg_doc_length())
-        return (tf * (k1 +1)) / (tf + k1 * len_norm)
+        avg_doc_length = self.__get_avg_doc_length()
+
+        if avg_doc_length == 0:
+            return 0.0
+
+        len_norm = 1 - b + b * (self.doc_lengths[doc_id] / avg_doc_length)
+        return (tf * (k1 + 1)) / (tf + k1 * len_norm)
 
     def build(self):
         with open("data/movies.json", "r", encoding="utf-8") as file:
             data = json.load(file)
+
         movies = data["movies"]
-        for m in movies:
-            self.__add_document(m["id"], f"{m['title']} {m['description']}")
-            self.docmap[m["id"]] = m
+
+        for movie in movies:
+            self.__add_document(movie["id"], f"{movie['title']} {movie['description']}")
+            self.docmap[movie["id"]] = movie
 
     def bm25(self, doc_id, term) -> float:
         return self.get_bm25_tf(doc_id, term) * self.get_bm25_idf(term)
 
     def bm25_search(self, query: str, limit: int) -> list[tuple[dict, float]]:
         query_terms = process_text(query)
+
         results: list[tuple[dict, float]] = []
+
         for doc_id, doc in self.docmap.items():
             score = sum(self.bm25(doc_id, term) for term in query_terms)
             results.append((doc, score))
+
         results.sort(key=lambda x: x[1], reverse=True)
+
         return results[:limit]
 
     def save(self):
         os.makedirs("cache", exist_ok=True)
-        pickle.dump(self.index, open("cache/index.pkl", "wb"))
-        pickle.dump(self.docmap, open("cache/docmap.pkl", "wb"))
-        pickle.dump(self.term_frequencies, open("cache/term_frequencies.pkl", "wb"))
-        pickle.dump(self.doc_lengths, open("cache/doc_lengths.pkl", "wb"))
+
+        with open("cache/index.pkl", "wb") as file:
+            pickle.dump(self.index, file)
+
+        with open("cache/docmap.pkl", "wb") as file:
+            pickle.dump(self.docmap, file)
+
+        with open("cache/term_frequencies.pkl", "wb") as file:
+            pickle.dump(self.term_frequencies, file)
+
+        with open("cache/doc_lengths.pkl", "wb") as file:
+            pickle.dump(self.doc_lengths, file)
 
     def load(self):
-        if os.path.exists("cache/index.pkl") and os.path.exists("cache/docmap.pkl"):
-            self.index = pickle.load(open("cache/index.pkl", "rb"))
-            self.docmap = pickle.load(open("cache/docmap.pkl", "rb"))
-            self.term_frequencies= pickle.load(open("cache/term_frequencies.pkl", "rb"))
-            self.doc_lengths = pickle.load(open("cache/doc_lengths.pkl", "rb"))
-        else:
+        required_cache_files = [
+            "cache/index.pkl",
+            "cache/docmap.pkl",
+            "cache/term_frequencies.pkl",
+            "cache/doc_lengths.pkl",
+        ]
+
+        if not all(os.path.exists(path) for path in required_cache_files):
             raise FileNotFoundError("Index files not found. Please build the index first.")
+
+        with open("cache/index.pkl", "rb") as file:
+            self.index = pickle.load(file)
+
+        with open("cache/docmap.pkl", "rb") as file:
+            self.docmap = pickle.load(file)
+
+        with open("cache/term_frequencies.pkl", "rb") as file:
+            self.term_frequencies = pickle.load(file)
+
+        with open("cache/doc_lengths.pkl", "rb") as file:
+            self.doc_lengths = pickle.load(file)

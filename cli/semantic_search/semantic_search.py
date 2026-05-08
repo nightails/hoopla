@@ -9,7 +9,6 @@ class SemanticSearch:
         if not text or text.isspace():
             raise ValueError("Invalid string")
         embeddings = self.model.encode(text)
-        # return the first result for now
         return embeddings
 
 def verify_model():

@@ -1,7 +1,7 @@
 import argparse
 
 from search_utils import BM25_K1, bm25_idf_command, bm25_tf_command, BM25_B, movie_search, idf_command, tf_command, \
-    tfidf_command, build_command
+    tfidf_command, build_command, bm25search
 
 
 def main() -> None:
@@ -33,6 +33,10 @@ def main() -> None:
     bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
     bm25_tf_parser.add_argument("b", type=float, nargs='?', default=BM25_B, help="Tunable BM25 b parameter")
 
+    bm25search_parser = subparsers.add_parser("bm25search", help="Search movies using full BM25 scoring")
+    bm25search_parser.add_argument("term", type=str, help="Term to search for")
+    bm25search_parser.add_argument("--limit", type=int, nargs='?', default=5, help="Number of results to return")
+
     args = parser.parse_args()
 
     match args.command:
@@ -41,6 +45,12 @@ def main() -> None:
             movies = movie_search(args.query)
             for movie in movies:
                 print(f"id: {movie['id']}\ntitle: {movie['title']}\n")
+        case "bm25search":
+            results = bm25search(args.term, args.limit)
+            i = 1
+            for doc, score in results:
+                print(f"{i}. ({doc['id']}) {doc['title']} - Score: {score:.2f}")
+                i += 1
         case "build":
             build_command()
         case "tf":

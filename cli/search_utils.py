@@ -9,6 +9,15 @@ def build_command():
     index.build()
     index.save()
 
+def bm25search(term: str, limit=5) -> list[tuple[dict, float]]:
+    movies_index = InvertedIndex()
+    try:
+        movies_index.load()
+    except FileNotFoundError as err:
+        print(err)
+        exit()
+
+    return movies_index.bm25_search(term, limit)
 
 def bm25_idf_command(term: str) -> float:
     term = process_text(term)[0]

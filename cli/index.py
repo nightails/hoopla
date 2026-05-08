@@ -63,6 +63,18 @@ class InvertedIndex:
             self.__add_document(m["id"], f"{m['title']} {m['description']}")
             self.docmap[m["id"]] = m
 
+    def bm25(self, doc_id, term) -> float:
+        return self.get_bm25_tf(doc_id, term) * self.get_bm25_idf(term)
+
+    def bm25_search(self, query: str, limit: int) -> list[tuple[dict, float]]:
+        query_terms = process_text(query)
+        results: list[tuple[dict, float]] = []
+        for doc_id, doc in self.docmap.items():
+            score = sum(self.bm25(doc_id, term) for term in query_terms)
+            results.append((doc, score))
+        results.sort(key=lambda x: x[1], reverse=True)
+        return results[:limit]
+
     def save(self):
         os.makedirs("cache", exist_ok=True)
         pickle.dump(self.index, open("cache/index.pkl", "wb"))

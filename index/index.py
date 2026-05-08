@@ -1,5 +1,6 @@
 import collections
 import json
+import math
 import os
 import pickle
 
@@ -32,6 +33,11 @@ class InvertedIndex:
         if len(tokens) != 1:
             raise ValueError("Term must be a single searchable token")
         return self.term_frequencies.get(doc_id, collections.Counter()).get(tokens[0], 0)
+
+    def get_bm25_idf(self, term: str) -> float:
+        n = len(self.docmap)
+        df = len(self.get_documents(term))
+        return math.log((n - df + 0.5) / (df + 0.5) + 1)
 
     def build(self):
         with open("data/movies.json", "r", encoding="utf-8") as file:

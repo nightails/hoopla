@@ -32,6 +32,9 @@ def main() -> None:
     tfidf_parser.add_argument("movie_id", type=int, help="Movie ID")
     tfidf_parser.add_argument("term", type=str, help="Term to search for")
 
+    bm25_idf_parser = subparsers.add_parser("bm25idf", help="Get BM25 IDF score for a given term")
+    bm25_idf_parser.add_argument("term", type=str, help="Term to get BM25 IDF score for")
+
     args = parser.parse_args()
 
     match args.command:
@@ -80,6 +83,11 @@ def main() -> None:
             idf = math.log((len(movies_index.docmap) + 1) / (len(movies_index.get_documents(term)) + 1))
             tfidf = tf * idf
             print(f"TF-IDF score of '{args.term}' in document {args.movie_id}: {tfidf:.2f}")
+
+        case "bm25idf":
+            bm25idf = bm25_idf_command(args.term)
+            print(f"BM25 IDF score of '{args.term}': {bm25idf:.2f}")
+
         case _:
             parser.print_help()
 
@@ -101,6 +109,18 @@ def movie_search(keyword) -> list[dict]:
             break
 
     return movies_list[:5]
+
+def bm25_idf_command(term: str) -> float:
+    term = process_text(term)[0]
+    movies_index = InvertedIndex()
+    try:
+        movies_index.load()
+    except FileNotFoundError as err:
+        print(err)
+        exit()
+
+    return movies_index.get_bm25_idf(term)
+
 
 if __name__ == "__main__":
     main()

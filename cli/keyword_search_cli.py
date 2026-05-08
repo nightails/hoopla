@@ -1,15 +1,8 @@
 import argparse
 import math
-import sys
 
-from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0,str(PROJECT_ROOT))
-
-from index import InvertedIndex
 from text import process_text
+from index import bm25_idf_command, BM25_K1, bm25_tf_command, InvertedIndex
 
 
 def main() -> None:
@@ -34,6 +27,11 @@ def main() -> None:
 
     bm25_idf_parser = subparsers.add_parser("bm25idf", help="Get BM25 IDF score for a given term")
     bm25_idf_parser.add_argument("term", type=str, help="Term to get BM25 IDF score for")
+
+    bm25_tf_parser = subparsers.add_parser("bm25tf", help="Get BM25 TF score for a given document ID and term")
+    bm25_tf_parser.add_argument("movie_id", type=int, help="Movie ID")
+    bm25_tf_parser.add_argument("term", type=str, help="Term to get BM25 TF score for")
+    bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
 
     args = parser.parse_args()
 
@@ -88,6 +86,10 @@ def main() -> None:
             bm25idf = bm25_idf_command(args.term)
             print(f"BM25 IDF score of '{args.term}': {bm25idf:.2f}")
 
+        case "bm25tf":
+            bm25tf = bm25_tf_command(args.movie_id, args.term)
+            print(f"BM25 TF score of '{args.term}' in document {args.movie_id}: {bm25tf:.2f}")
+
         case _:
             parser.print_help()
 
@@ -110,16 +112,6 @@ def movie_search(keyword) -> list[dict]:
 
     return movies_list[:5]
 
-def bm25_idf_command(term: str) -> float:
-    term = process_text(term)[0]
-    movies_index = InvertedIndex()
-    try:
-        movies_index.load()
-    except FileNotFoundError as err:
-        print(err)
-        exit()
-
-    return movies_index.get_bm25_idf(term)
 
 
 if __name__ == "__main__":

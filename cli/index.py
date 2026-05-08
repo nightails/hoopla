@@ -7,6 +7,8 @@ import pickle
 from text import process_text
 
 
+BM25_K1 = 1.5
+
 class InvertedIndex:
     def __init__(self):
         self.index: dict[str, set[int]] = {}
@@ -39,6 +41,10 @@ class InvertedIndex:
         df = len(self.get_documents(term))
         return math.log((n - df + 0.5) / (df + 0.5) + 1)
 
+    def get_bm25_tf(self, doc_id, term, k1=BM25_K1) -> float:
+        tf = self.get_tf(doc_id, term)
+        return (tf * (k1 +1)) / (tf + k1)
+
     def build(self):
         with open("data/movies.json", "r", encoding="utf-8") as file:
             data = json.load(file)
@@ -60,3 +66,25 @@ class InvertedIndex:
             self.term_frequencies= pickle.load(open("cache/term_frequencies.pkl", "rb"))
         else:
             raise FileNotFoundError("Index files not found. Please build the index first.")
+
+def bm25_idf_command(term: str) -> float:
+    term = process_text(term)[0]
+    movies_index = InvertedIndex()
+    try:
+        movies_index.load()
+    except FileNotFoundError as err:
+        print(err)
+        exit()
+
+    return movies_index.get_bm25_idf(term)
+
+def bm25_tf_command(doc_id: int, term: str, k1=BM25_K1) -> float:
+    term = process_text(term)[0]
+    movies_index = InvertedIndex()
+    try:
+        movies_index.load()
+    except FileNotFoundError as err:
+        print(err)
+        exit()
+
+    return movies_index.get_bm25_tf(doc_id, term, k1)

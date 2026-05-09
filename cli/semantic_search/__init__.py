@@ -3,4 +3,5 @@ from .semantic_search import (
     embed_text,
     verify_embeddings,
     embed_query_text,
+    search
 )

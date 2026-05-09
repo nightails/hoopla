@@ -3,6 +3,7 @@ import numpy as np
 
 from sentence_transformers import SentenceTransformer
 
+
 MOVIE_PATH = "data/movies.json"
 CACHE_PATH = "cache/movie_embeddings.npy"
 
@@ -39,6 +40,20 @@ class SemanticSearch:
                 return self.embeddings
         return self.build_embeddings(documents)
 
+    def search(self, query, limit):
+        if self.embeddings is None or self.documents is None:
+            raise ValueError("No embeddings loaded. Call `load_or_create_embeddings` first.")
+        scores: list[tuple] = []
+        query_embedding = self.generate_embedding(query)
+        for e, doc in zip(self.embeddings, self.documents) :
+            cs = cosine_similarity(query_embedding, e)
+            scores.append((cs, doc))
+        sorted_scores = sorted(scores, key=lambda x: x[0], reverse=True)
+        results: list[dict] = []
+        for s in sorted_scores:
+            results.append({"score": s[0], "title": s[1]['title'], "description": s[1]['description']})
+        return results[:limit]
+
 def verify_model():
     semantic_search = SemanticSearch()
     print(f"Model loaded: {semantic_search.model}")
@@ -54,7 +69,7 @@ def embed_text(text: str):
 def verify_embeddings():
     semantic_search = SemanticSearch()
 
-    with open("data/movies.json", "r", encoding="utf-8") as file:
+    with open(MOVIE_PATH, "r", encoding="utf-8") as file:
         data = json.load(file)
     docs = data["movies"]
 
@@ -68,4 +83,28 @@ def embed_query_text(query):
     print(f"Query: {query}")
     print(f"First 3 dimensions: {embedding[:3]}")
     print(f"Shape: {embedding.shape}")
+
+def search(query: str, limit=5):
+    semantic_search = SemanticSearch()
+
+    with open(MOVIE_PATH, "r", encoding="utf-8") as file:
+        data = json.load(file)
+    docs = data["movies"]
+    semantic_search.load_or_create_embeddings(docs)
+
+    results = semantic_search.search(query, limit)
+    for i, result in enumerate(results, start=1):
+        print(f"{i}: {result['title']}: (score: {result['score']})")
+        print(f" {result['description']}")
+
+
+def cosine_similarity(vec1, vec2):
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    return dot_product / (norm1 * norm2)
 

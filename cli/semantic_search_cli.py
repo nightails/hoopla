@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+from re import search
 
 from semantic_search import (
     verify_model,
     embed_text,
     verify_embeddings,
     embed_query_text,
+    search,
 )
 
 def main():
@@ -23,6 +25,10 @@ def main():
     embed_query_parser = subparsers.add_parser("embed_query", help="Generate embeddings from query")
     embed_query_parser.add_argument("query", type=str, help="Query to be embeddings")
 
+    search_parser = subparsers.add_parser("search", help="Semantically search for movie")
+    search_parser.add_argument("query", type=str, help="Search query")
+    search_parser.add_argument("--limit", type=int, nargs='?', default=5, help="Limit number of results")
+
     args = parser.parse_args()
 
     match args.command:
@@ -34,6 +40,8 @@ def main():
             embed_text(args.text)
         case "embed_query":
             embed_query_text(args.query)
+        case "search":
+            search(args.query, args.limit)
         case _:
             parser.print_help()
 

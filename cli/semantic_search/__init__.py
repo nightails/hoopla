@@ -7,3 +7,5 @@ from .semantic_search import (
     chunk_text,
     semantic_chunk,
 )
+
+from .chunked_semantic_search import embed_chunks

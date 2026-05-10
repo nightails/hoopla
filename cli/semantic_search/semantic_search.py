@@ -116,23 +116,21 @@ def chunk_text(text: str, chunk_size: int, overlap: int):
     for i, chunk in enumerate(chunks, start=1):
         print(f"{i}. {chunk}")
 
-def semantic_chunk(text: str, max_chunk_size: int, overlap: int):
+def semantic_chunk(text: str, max_chunk_size: int, overlap: int) -> list[str]:
     sentences = re.split(r"(?<=[.!?])\s+", text)
-    chunks = []
+    chunks: list[str] = []
 
     n_sentences = len(sentences)
     i = 0
     while i < n_sentences:
-        if overlap > 0 and i > 0:
-            chunk_sentences = sentences[i-overlap:i+max_chunk_size]
-        else:
-            chunk_sentences = sentences[i:i+max_chunk_size]
+        chunk_sentences = sentences[i:i+max_chunk_size]
+        if chunks and len(chunk_sentences) <= overlap:
+            break
         chunks.append(" ". join(chunk_sentences))
-        i += max_chunk_size
+        i += max_chunk_size - overlap
 
-    print(f"Semantically chunking {len(text)} characters")
-    for i, chunk in enumerate(chunks, start=1):
-        print(f"{i}. {chunk}")
+    return chunks
+
 
 
 def cosine_similarity(vec1, vec2):

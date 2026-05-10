@@ -97,14 +97,21 @@ def search(query: str, limit=5):
         print(f"{i}: {result['title']}: (score: {result['score']})")
         print(f" {result['description']}")
 
-def chunk_text(text: str, chunk_size: int):
+def chunk_text(text: str, chunk_size: int, overlap: int):
     words = text.split()
-    groups = [words[i:i + chunk_size] for i in range(0, len(words), chunk_size)]
-
     chunks = []
-    for line in groups:
-        chunks.append(" ".join(line))
-    
+
+    n_words = len(words)
+    i = 0
+    while i < n_words:
+        if overlap > 0 and i > 0:
+            chunk_words = words[i-overlap:i+chunk_size]
+        else:
+            chunk_words = words[i:i+chunk_size]
+        chunks.append(" ".join(chunk_words))
+        i += chunk_size
+
+
     print(f"Chunking {len(text)} characters")
     for i, chunk in enumerate(chunks, start=1):
         print(f"{i}. {chunk}")

@@ -97,6 +97,18 @@ def search(query: str, limit=5):
         print(f"{i}: {result['title']}: (score: {result['score']})")
         print(f" {result['description']}")
 
+def chunk_text(text: str, chunk_size: int):
+    words = text.split()
+    groups = [words[i:i + chunk_size] for i in range(0, len(words), chunk_size)]
+
+    chunks = []
+    for line in groups:
+        chunks.append(" ".join(line))
+    
+    print(f"Chunking {len(text)} characters")
+    for i, chunk in enumerate(chunks, start=1):
+        print(f"{i}. {chunk}")
+
 
 def cosine_similarity(vec1, vec2):
     dot_product = np.dot(vec1, vec2)

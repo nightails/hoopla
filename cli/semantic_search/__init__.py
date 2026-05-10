@@ -5,4 +5,5 @@ from .semantic_search import (
     embed_query_text,
     search,
     chunk_text,
+    semantic_chunk,
 )

@@ -12,6 +12,7 @@ from semantic_search import (
     chunk_text,
     semantic_chunk,
     embed_chunks,
+    search_chunked,
 )
 
 def main():
@@ -44,6 +45,10 @@ def main():
 
     subparsers.add_parser("embed_chunks", help="Generate embed chunks")
 
+    search_chunked_parser = subparsers.add_parser("search_chunked", help="Search for chunks")
+    search_chunked_parser.add_argument("query", type=str, help="Search query")
+    search_chunked_parser.add_argument("--limit", type=int, nargs='?', default=5, help="Number of results to display")
+
     args = parser.parse_args()
 
     match args.command:
@@ -66,6 +71,8 @@ def main():
                 print(f"{i}. {chunk}")
         case "embed_chunks":
             embed_chunks()
+        case "search_chunked":
+            search_chunked(args.query, args.limit)
         case _:
             parser.print_help()
 

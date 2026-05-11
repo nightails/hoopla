@@ -8,4 +8,7 @@ from .semantic_search import (
     semantic_chunk,
 )
 
-from .chunked_semantic_search import embed_chunks
+from .chunked_semantic_search import (
+    embed_chunks,
+    search_chunked,
+)

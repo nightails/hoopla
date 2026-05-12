@@ -1,7 +1,7 @@
 import os
 
 from .keyword_search import InvertedIndex
-from .search_utils import DEFAULT_SEARCH_LIMIT
+from .search_utils import DEFAULT_SEARCH_LIMIT, DOCUMENT_PREVIEW_LENGTH
 from .semantic_search import ChunkedSemanticSearch
 
 
@@ -68,7 +68,53 @@ class HybridSearch:
         return results[:limit]
 
     def rrf_search(self, query: str, k: int, limit: int = 10) -> list[dict]:
-        raise NotImplementedError("RRF hybrid search is not implemented yet.")
+        bm25_results = self._bm25_search(query, limit*500)
+        semantic_results = self.semantic_search.search_chunks(query, limit*500)
+
+        docs_ranks_map = {}
+        for i, bm25 in enumerate(bm25_results, start=1):
+            bm25_doc_id = bm25["id"]
+            if bm25_doc_id not in docs_ranks_map:
+                docs_ranks_map[bm25_doc_id] = {
+                    "title": bm25["title"],
+                    "document": bm25["document"][:DOCUMENT_PREVIEW_LENGTH],
+                    "bm25": i,
+                    "semantic": None,
+                }
+            else:
+                docs_ranks_map[bm25_doc_id]["bm25"] = i
+
+        for i, semantic in enumerate(semantic_results, start=1):
+            semantic_doc_id = semantic["id"]
+            if semantic_doc_id not in docs_ranks_map:
+                docs_ranks_map[semantic_doc_id] = {
+                    "title": semantic["title"],
+                    "document": semantic["document"][:DOCUMENT_PREVIEW_LENGTH],
+                    "bm25": None,
+                    "semantic": i,
+                }
+            else:
+                docs_ranks_map[semantic_doc_id]["semantic"] = i
+
+        for id, doc in docs_ranks_map.items():
+            bm25_rank = doc.get('bm25')
+            semantic_rank = doc.get('semantic')
+
+            if bm25_rank is not None and semantic_rank is not None:
+                bm25_rrf = rrf_score(bm25_rank, k)
+                semantic_rrf = rrf_score(semantic_rank, k)
+                docs_ranks_map[id]["rrf"] = bm25_rrf + semantic_rrf
+                continue
+            if bm25_rank is not None:
+                docs_ranks_map[id]["rrf"] = rrf_score(bm25_rank, k)
+                continue
+            if semantic_rank is not None:
+                docs_ranks_map[id]["rrf"] = rrf_score(semantic_rank, k)
+                continue
+
+        results = list(docs_ranks_map.values())
+        results.sort(key=lambda x: x["rrf"], reverse=True)
+        return results[:limit]
 
 def normalize_scores(scores: list[float]):
     if len(scores) == 0:
@@ -87,3 +133,6 @@ def normalize_scores(scores: list[float]):
 
 def hybrid_score(bm25_score, semantic_score, alpha=0.5):
     return alpha * bm25_score + (1 - alpha) * semantic_score
+
+def rrf_score(rank: float, k=60):
+    return 1 / (k + rank)

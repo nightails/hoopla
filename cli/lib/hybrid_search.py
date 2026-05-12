@@ -26,33 +26,33 @@ class HybridSearch:
 
         bm25_scores = []
         for result in bm25_results:
-            bm25_scores.append(result.get('score'))
+            bm25_scores.append(result["score"])
         bm25_scores = normalize_scores(bm25_scores)
 
         semantic_scores = []
         for result in semantic_results:
-            semantic_scores.append(result.get('score'))
+            semantic_scores.append(result["score"])
         semantic_scores = normalize_scores(semantic_scores)
 
         docs_scores_map = {}
 
         if bm25_scores is not None :
             for doc, score in zip(bm25_results, bm25_scores):
-                doc_id = doc.get('id')
+                doc_id = doc["id"]
                 docs_scores_map[doc_id] = {
-                    "title": doc.get('title'),
-                    "document": doc.get('document'),
+                    "title": doc["title"],
+                    "document": doc["document"][:DOCUMENT_PREVIEW_LENGTH],
                     "bm25": score,
                     "semantic": 0,
                 }
 
         if semantic_scores is not None:
             for doc, score in zip(semantic_results, semantic_scores):
-                doc_id = doc.get('id')
-                if doc.get('id') not in docs_scores_map:
+                doc_id = doc["id"]
+                if doc_id not in docs_scores_map:
                     docs_scores_map[doc_id] = {
-                        "title": doc.get('title'),
-                        "document": doc.get('document'),
+                        "title": doc["title"],
+                        "document": doc["document"][:DOCUMENT_PREVIEW_LENGTH],
                         "bm25": 0,
                         "semantic": score,
                     }
@@ -60,7 +60,7 @@ class HybridSearch:
                     docs_scores_map[doc_id]["semantic"] = score
                 
         for key, value in docs_scores_map.items():
-            score = hybrid_score(value.get('bm25'), value.get('semantic'), alpha)
+            score = hybrid_score(value["bm25"], value["semantic"], alpha)
             docs_scores_map[key]["hybrid"] = score
 
         results = list(docs_scores_map.values())

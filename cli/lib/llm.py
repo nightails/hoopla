@@ -1,6 +1,7 @@
 import enum
 import os, time, json
 
+from sentence_transformers import CrossEncoder
 from dotenv import load_dotenv
 from google import genai
 
@@ -83,7 +84,7 @@ def rerank(method: str, query: str, docs: list[dict], limit: int = 5) -> list[di
                 time.sleep(20)
 
             docs.sort(key=lambda x: x["rerank"], reverse=True)
-            return docs[:limit]
+
         case "batch":
             message = f"""Rank the movies listed below by relevance to the following search query.
 
@@ -116,9 +117,18 @@ def rerank(method: str, query: str, docs: list[dict], limit: int = 5) -> list[di
                 docs[i]["rerank"] = rank 
 
             docs.sort(key=lambda x: x["rerank"])
-            return docs[:limit]
-        case _:
-            return docs[:limit]
+
+        case "cross_encoder":
+            pairs = []
+            for doc in docs:
+                pairs.append([query, f"{doc.get('title', '')} - {doc.get('document', '')}"])
+            cross_encoder = CrossEncoder("cross-encoder/ms-marco-TinyBERT-L2-v2")
+            scores = cross_encoder.predict(pairs)
+            for i, score in enumerate(scores):
+                docs[i]["rerank"] = score
+            docs.sort(key=lambda x: x["rerank"], reverse=True)
+
+    return docs[:limit]
 
 def load_llm():
     load_dotenv()

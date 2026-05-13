@@ -22,6 +22,7 @@ def main():
             print(f"\n- Query: {r["query"]}")
             print(f"  - Precision@{limit}: {r["precision"]:0.4f}")
             print(f"  - Recall@{limit}: {r["recall"]:0.4f}")
+            print(f"  - F1 Score: {r["f1_score"]:0.4f}")
             print(f"  - Retrieved: {r["retrieved"]}")
             print(f"  - Relevant: {r["relevant"]}")
     else:

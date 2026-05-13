@@ -28,9 +28,11 @@ def evaluate(limit: int = 5) -> list[dict]:
 
         precision = calculate_precision(len(relevants), len(total_retrieved))
         recall = calculate_recall(len(relevants), len(total_relevant))
+        f1_score = calculate_f1_score(precision, recall)
         
         results[i]["precision"] = precision
         results[i]["recall"] = recall
+        results[i]["f1_score"] = f1_score
 
     return results
 
@@ -46,4 +48,7 @@ def calculate_precision(relevant_retrieved: int , total_retrieved: int) -> float
 
 def calculate_recall(relevant_retrieved: int, total_relevant: int) -> float:
     return relevant_retrieved / total_relevant
+
+def calculate_f1_score(precision: float, recall: float) -> float:
+    return 2 * (precision * recall) / (precision + recall)
 

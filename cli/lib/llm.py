@@ -77,7 +77,7 @@ def rerank(method: str, query: str, docs: list[dict], limit: int = 5) -> list[di
                 resp = prompt_gemini(client, message)
                 docs[i]["rerank"] = float(resp.text)
                 
-                time.sleep(5)
+                time.sleep(20)
 
             docs.sort(key=lambda x: x["rerank"], reverse=True)
             return docs[:limit]

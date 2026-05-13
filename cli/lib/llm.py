@@ -1,4 +1,4 @@
-import os
+import os, time
 
 from dotenv import load_dotenv
 from google import genai
@@ -54,6 +54,35 @@ def enhance_query(method: str, query: str):
     resp = prompt_gemini(client, message)
     return resp.text
 
+def rerank(method: str, query: str, docs: list[dict], limit: int = 5) -> list[dict]:
+    client = load_llm()
+    match method:
+        case "individual":
+            for i, doc in enumerate(docs):
+                message = f"""Rate how well this movie matches the search query.
+
+                Query: "{query}"
+                Movie: {doc.get("title", "")} - {doc.get("document", "")}
+
+                Consider:
+                - Direct relevance to query
+                - User intent (what they're looking for)
+                - Content appropriateness
+
+                Rate 0-10 (10 = perfect match).
+                Output ONLY the number in your response, no other text or explanation.
+
+                Score:"""
+
+                resp = prompt_gemini(client, message)
+                docs[i]["rerank"] = float(resp.text)
+                
+                time.sleep(5)
+
+            docs.sort(key=lambda x: x["rerank"], reverse=True)
+            return docs[:limit]
+        case _:
+            return docs[:limit]
 
 def load_llm():
     load_dotenv()
@@ -65,7 +94,7 @@ def load_llm():
 
 def prompt_gemini(client, message):
     return client.models.generate_content(
-        model = 'gemma-4-31b-it',
+        model = 'gemini-2.5-flash',
         contents = message
     )
 

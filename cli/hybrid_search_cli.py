@@ -1,6 +1,9 @@
 import argparse
 
-from lib.llm import enhance_query
+from lib.llm import (
+    enhance_query,
+    rerank,
+)
 from lib.search_utils import load_movies
 from lib.hybrid_search import (
     HybridSearch,
@@ -30,6 +33,12 @@ def main() -> None:
         choices=["spell", "rewrite", "expand"],
         help="Query enhancement method",
     )
+    rrf_search_parser.add_argument(
+        "--rerank-method", 
+        type=str,
+        choices=["individual"],
+        help="Query reranking method",
+    )
 
     args = parser.parse_args()
 
@@ -53,16 +62,33 @@ def main() -> None:
             query = args.query
             movies = load_movies()
             search = HybridSearch(movies)
+
             if args.enhance:
                 query = enhance_query(args.enhance, query)
                 if query != args.query:
                     print(f"Enhanced query ({args.enhance}): '{args.query}' -> '{query}'\n")
-            results = search.rrf_search(query, args.k, args.limit)
-            for i, r in enumerate(results, start=1):
-                print(f"\n{i}. {r.get('title')}")
-                print(f"   RRF Score: {r.get('rrf'):0.4f}")
-                print(f"   BM25: {r.get('bm25')}, Semantic: {r.get('semantic')}")
-                print(f"   {r.get('document')}..")
+
+            if args.rerank_method:
+                results = search.rrf_search(query, args.k, args.limit*5)
+                results = rerank(args.rerank_method, query, results, args.limit)
+
+                print(f"Re-ranking top {args.limit} results using {args.rerank_method} method...")
+                print(f"Reciprocal Rrank Fusion Results for '{query}' (k={args.k})")
+                for i, r in enumerate(results, start=1):
+                    print(f"\n{i}. {r.get('title')}")
+                    if r["rerank"] is not None:
+                        print(f"  Re-rank Score: {r["rerank"]:0.3f}/10")
+                    print(f"   RRF Score: {r.get('rrf'):0.4f}")
+                    print(f"   BM25: {r.get('bm25')}, Semantic: {r.get('semantic')}")
+                    print(f"   {r.get('document')}..")
+
+            else:
+                results = search.rrf_search(query, args.k, args.limit)
+                for i, r in enumerate(results, start=1):
+                    print(f"\n{i}. {r.get('title')}")
+                    print(f"   RRF Score: {r.get('rrf'):0.4f}")
+                    print(f"   BM25: {r.get('bm25')}, Semantic: {r.get('semantic')}")
+                    print(f"   {r.get('document')}..")
         case _:
             parser.print_help()
 

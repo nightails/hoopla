@@ -1,4 +1,5 @@
-import os, time
+import enum
+import os, time, json
 
 from dotenv import load_dotenv
 from google import genai
@@ -75,11 +76,46 @@ def rerank(method: str, query: str, docs: list[dict], limit: int = 5) -> list[di
                 Score:"""
 
                 resp = prompt_gemini(client, message)
-                docs[i]["rerank"] = float(resp.text)
+                score_text = (resp.text or "").strip()
+                score = int(score_text)
+                docs[i]["rerank"] = score 
                 
                 time.sleep(20)
 
             docs.sort(key=lambda x: x["rerank"], reverse=True)
+            return docs[:limit]
+        case "batch":
+            message = f"""Rank the movies listed below by relevance to the following search query.
+
+            Query: "{query}"
+
+            Movies:
+            {docs}
+
+            Return ONLY the movie IDs in order of relevance (best match first). Return a valid JSON list, nothing else.
+
+            For example:
+            [75, 12, 34, 2, 1]
+
+            Ranking:"""
+
+            resp = prompt_gemini(client, message)
+            resp_text = resp.text.strip("```json ")
+            ranked_ids = json.loads(resp_text)
+
+            id_rank_map = {}
+            for i, id in enumerate(ranked_ids):
+                id = int(id)
+                id_rank_map[id] = i
+
+            for i, doc in enumerate(docs):
+                rank = id_rank_map.get(i)
+                if rank is None:
+                    docs[i]["rerank"] = len(docs)
+                    continue
+                docs[i]["rerank"] = rank 
+
+            docs.sort(key=lambda x: x["rerank"])
             return docs[:limit]
         case _:
             return docs[:limit]
@@ -94,7 +130,7 @@ def load_llm():
 
 def prompt_gemini(client, message):
     return client.models.generate_content(
-        model = 'gemini-2.5-flash',
+        model = 'gemma-4-31b-it',
         contents = message
     )
 

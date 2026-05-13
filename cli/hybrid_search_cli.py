@@ -72,17 +72,17 @@ def main() -> None:
                 results = search.rrf_search(query, args.k, args.limit*5)
                 results = rerank(args.rerank_method, query, results, args.limit)
 
-                print(f"Re-ranking top {args.limit} results using {args.rerank_method} method...")
+                print(f"\nRe-ranking top {args.limit} results using {args.rerank_method} method...")
                 print(f"Reciprocal Rrank Fusion Results for '{query}' (k={args.k})")
                 for i, r in enumerate(results, start=1):
                     print(f"\n{i}. {r.get('title')}")
                     match args.rerank_method:
                         case "individual":
-                            print(f"  Re-rank Score: {r["rerank"]:0.3f}/10")
+                            print(f"   Re-rank Score: {r["rerank"]:0.3f}/10")
                         case "batch":
-                            print(f"  Re-rank Rank: {r["rerank"]}")
+                            print(f"   Re-rank Rank: {r["rerank"]}")
                         case "cross_encoder":
-                            print(f"  Cross Encoder Score: {r["rerank"]:0.3f}")
+                            print(f"   Cross Encoder Score: {r["rerank"]:0.3f}")
                     print(f"   RRF Score: {r.get('rrf'):0.4f}")
                     print(f"   BM25: {r.get('bm25')}, Semantic: {r.get('semantic')}")
                     print(f"   {r.get('document')}..")

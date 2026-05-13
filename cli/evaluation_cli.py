@@ -1,6 +1,6 @@
 import argparse
 
-from lib.evaluation import evaluate_precision
+from lib.evaluation import evaluate
 
 def main():
     parser = argparse.ArgumentParser(description="Search Evaluation CLI")
@@ -14,13 +14,14 @@ def main():
     args = parser.parse_args()
     limit = args.limit
 
-    results = evaluate_precision(limit)
+    results = evaluate(limit)
 
     if results is not None:
         print(f"k={limit}")
         for r in results:
             print(f"\n- Query: {r["query"]}")
             print(f"  - Precision@{limit}: {r["precision"]:0.4f}")
+            print(f"  - Recall@{limit}: {r["recall"]:0.4f}")
             print(f"  - Retrieved: {r["retrieved"]}")
             print(f"  - Relevant: {r["relevant"]}")
     else:

@@ -3,8 +3,9 @@ import argparse
 from lib.llm import (
     enhance_query,
     rerank,
+    evaluate
 )
-from lib.search_utils import load_movies
+from lib.search_utils import DOCUMENT_PREVIEW_LENGTH, load_movies
 from lib.hybrid_search import (
     HybridSearch,
     normalize_scores,
@@ -39,6 +40,7 @@ def main() -> None:
         choices=["individual", "batch", "cross_encoder"],
         help="Query reranking method",
     )
+    rrf_search_parser.add_argument("--evaluate", action="store_true", help="Optional evaluation")
 
     args = parser.parse_args()
 
@@ -94,18 +96,25 @@ def main() -> None:
                             print(f"   Re-rank Rank: {r["rerank"]}")
                         case "cross_encoder":
                             print(f"   Cross Encoder Score: {r["rerank"]:0.3f}")
-                    print(f"   RRF Score: {r.get('rrf'):0.4f}")
-                    print(f"   BM25: {r.get('bm25')}, Semantic: {r.get('semantic')}")
-                    print(f"   {r.get('document')}..")
+                    print(f"   RRF Score: {r["rrf"]:0.4f}")
+                    print(f"   BM25: {r["bm25"]}, Semantic: {r["semantic"]}")
+                    print(f"   {r["document"]}..")
 
             else:
                 results = search.rrf_search(query, args.k, args.limit)
 
                 for i, r in enumerate(results, start=1):
-                    print(f"\n{i}. {r.get('title')}")
-                    print(f"   RRF Score: {r.get('rrf'):0.4f}")
-                    print(f"   BM25: {r.get('bm25')}, Semantic: {r.get('semantic')}")
-                    print(f"   {r.get('document')}..")
+                    print(f"\n{i}. {r["title"]}")
+                    print(f"   RRF Score: {r["rrf"]:0.4f}")
+                    print(f"   BM25: {r["bm25"]}, Semantic: {r["semantic"]}")
+                    print(f"   {r["document"]}..")
+
+            if args.evaluate:
+                results = evaluate(query, results)
+                print("\nLLM evaluate:")
+                for i, r in enumerate(results):
+                    print(f"{i}. {r["title"]}: {r["rank"]}/3")
+
         case _:
             parser.print_help()
 

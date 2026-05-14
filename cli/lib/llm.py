@@ -130,6 +130,47 @@ def rerank(method: str, query: str, docs: list[dict], limit: int = 5) -> list[di
 
     return docs[:limit]
 
+def evaluate(query: str, current_results: list) -> list:
+    formatted_results = []
+    for i, r in enumerate(current_results, start=1):
+        formatted_results.append(
+            f"{i}. {r["title"]}: {r["document"]}"
+        )
+
+    client = load_llm()
+    message = f"""Rate how relevant each result is to this query on a 0-3 scale:
+
+    Query: "{query}"
+
+    Results:
+    {chr(10).join(formatted_results)}
+
+    Scale:
+    - 3: Highly relevant
+    - 2: Relevant
+    - 1: Marginally relevant
+    - 0: Not relevant
+
+    Do NOT give any numbers other than 0, 1, 2, or 3.
+
+    Return ONLY the scores in the same order you were given the documents. Return a valid JSON list, nothing else. For example:
+
+    [2, 0, 3, 2, 0, 1]"""
+
+    resp = prompt_gemini(client, message)
+    resp_text = resp.text.strip("```json ")
+    ranks = json.loads(resp_text)
+
+    results = []
+    for rank, result in zip(ranks, current_results):
+        results.append({
+            "title": result["title"],
+            "rank": rank,
+        })
+
+    return results
+
+
 def load_llm():
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")

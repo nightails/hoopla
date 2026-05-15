@@ -28,6 +28,14 @@ def main():
         "--limit", type=int, default=5, help="Optional display limit of results"
     )
 
+    question_parser = subparsers.add_parser(
+        "question", help="Perform RAG (search + generate direct answer to the query)"
+    )
+    question_parser.add_argument("query", type=str, help="Search query for RAG")
+    question_parser.add_argument(
+        "--limit", type=int, default=5, help="Optional display limit of results"
+    )
+
     args = parser.parse_args()
 
     match args.command:
@@ -44,6 +52,11 @@ def main():
             query = args.query
             limit = args.limit
             answer = rag_search("citations", query, limit)
+            print_answer(answer)
+        case "question":
+            query = args.query
+            limit = args.limit
+            answer = rag_search("question", query, limit)
             print_answer(answer)
         case _:
             parser.print_help()

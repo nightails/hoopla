@@ -21,8 +21,8 @@ class HybridSearch:
         return self.idx.bm25_search(query, limit)
 
     def weighted_search(self, query: str, alpha: float, limit: int = 5) -> list[dict]:
-        bm25_results = self._bm25_search(query, limit*500)
-        semantic_results = self.semantic_search.search_chunks(query, limit*500)
+        bm25_results = self._bm25_search(query, limit * 500)
+        semantic_results = self.semantic_search.search_chunks(query, limit * 500)
 
         bm25_scores = []
         for result in bm25_results:
@@ -36,7 +36,7 @@ class HybridSearch:
 
         docs_scores_map = {}
 
-        if bm25_scores is not None :
+        if bm25_scores is not None:
             for doc, score in zip(bm25_results, bm25_scores):
                 doc_id = doc["id"]
                 docs_scores_map[doc_id] = {
@@ -58,18 +58,18 @@ class HybridSearch:
                     }
                 else:
                     docs_scores_map[doc_id]["semantic"] = score
-                
+
         for key, value in docs_scores_map.items():
             score = hybrid_score(value["bm25"], value["semantic"], alpha)
             docs_scores_map[key]["hybrid"] = score
 
         results = list(docs_scores_map.values())
-        results.sort(key=lambda x: x['hybrid'], reverse=True)
+        results.sort(key=lambda x: x["hybrid"], reverse=True)
         return results[:limit]
 
     def rrf_search(self, query: str, k: int, limit: int = 10) -> list[dict]:
-        bm25_results = self._bm25_search(query, limit*500)
-        semantic_results = self.semantic_search.search_chunks(query, limit*500)
+        bm25_results = self._bm25_search(query, limit * 500)
+        semantic_results = self.semantic_search.search_chunks(query, limit * 500)
 
         docs_ranks_map = {}
         for i, bm25 in enumerate(bm25_results, start=1):
@@ -77,7 +77,7 @@ class HybridSearch:
             if bm25_doc_id not in docs_ranks_map:
                 docs_ranks_map[bm25_doc_id] = {
                     "title": bm25["title"],
-                    "document": bm25["document"][:DOCUMENT_PREVIEW_LENGTH],
+                    "document": bm25["document"],
                     "bm25": i,
                     "semantic": None,
                 }
@@ -89,7 +89,7 @@ class HybridSearch:
             if semantic_doc_id not in docs_ranks_map:
                 docs_ranks_map[semantic_doc_id] = {
                     "title": semantic["title"],
-                    "document": semantic["document"][:DOCUMENT_PREVIEW_LENGTH],
+                    "document": semantic["document"],
                     "bm25": None,
                     "semantic": i,
                 }
@@ -97,8 +97,8 @@ class HybridSearch:
                 docs_ranks_map[semantic_doc_id]["semantic"] = i
 
         for id, doc in docs_ranks_map.items():
-            bm25_rank = doc.get('bm25')
-            semantic_rank = doc.get('semantic')
+            bm25_rank = doc.get("bm25")
+            semantic_rank = doc.get("semantic")
 
             if bm25_rank is not None and semantic_rank is not None:
                 bm25_rrf = rrf_score(bm25_rank, k)
@@ -116,10 +116,11 @@ class HybridSearch:
         results.sort(key=lambda x: x["rrf"], reverse=True)
         return results[:limit]
 
+
 def normalize_scores(scores: list[float]):
     if len(scores) == 0:
         return
-    
+
     min_score = min(scores)
     max_score = max(scores)
     if min_score == max_score:
@@ -131,8 +132,10 @@ def normalize_scores(scores: list[float]):
         norm_scores.append(norm_score)
     return norm_scores
 
+
 def hybrid_score(bm25_score, semantic_score, alpha=0.5):
     return alpha * bm25_score + (1 - alpha) * semantic_score
+
 
 def rrf_score(rank: float, k=60):
     return 1 / (k + rank)

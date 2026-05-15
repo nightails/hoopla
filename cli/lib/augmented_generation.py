@@ -19,6 +19,8 @@ def rag_search(method: str, query: str, limit: int = 5) -> dict:
             prompt = summarize_prompt(query, docs)
         case "citations":
             prompt = citations_prompt(query, docs)
+        case "question":
+            prompt = question_prompt(query, docs)
 
     client = load_llm()
     resp = prompt_gemini(client, prompt)
@@ -73,5 +75,22 @@ def citations_prompt(query: str, docs: list) -> str:
     - If sources disagree, mention the different viewpoints
     - If the answer isn't in the provided documents, say "I don't have enough information"
     - Be direct and informative
+
+    Answer:"""
+
+
+def question_prompt(query: str, docs: list) -> str:
+    return f"""Answer the user's question based on the provided movies that are available on Hoopla, a streaming service.
+
+    Question: {query}
+
+    Documents:
+    {docs}
+
+    Instructions:
+    - Answer questions directly and concisely
+    - Be casual and conversational
+    - Don't be cringe or hype-y
+    - Talk like a normal person would in a chat conversation
 
     Answer:"""

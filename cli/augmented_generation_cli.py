@@ -1,6 +1,6 @@
 import argparse
 
-from lib.augmented_generation import rag_search, summarize_rag_search
+from lib.augmented_generation import rag_search
 
 
 def main():
@@ -20,28 +20,41 @@ def main():
         "--limit", type=int, default=5, help="Optional display limit of results"
     )
 
+    citations_parser = subparsers.add_parser(
+        "citations", help="Perform RAG (search + generate answer with citations)"
+    )
+    citations_parser.add_argument("query", type=str, help="Search query for RAG")
+    citations_parser.add_argument(
+        "--limit", type=int, default=5, help="Optional display limit of results"
+    )
+
     args = parser.parse_args()
 
     match args.command:
         case "rag":
             query = args.query
-            answer = rag_search(query)
-            print("\nSearch Results:")
-            for doc in answer["results"]:
-                print(f" - {doc['title']}")
-            print("\n RAG Response:")
-            print(f" {answer['response']}")
+            answer = rag_search("rag", query)
+            print_answer(answer)
         case "summarize":
             query = args.query
             limit = args.limit
-            answer = summarize_rag_search(query, limit)
-            print("\nSearch Results:")
-            for doc in answer["results"]:
-                print(f" - {doc['title']}")
-            print("\n RAG Response:")
-            print(f" {answer['response']}")
+            answer = rag_search("summarize", query, limit)
+            print_answer(answer)
+        case "citations":
+            query = args.query
+            limit = args.limit
+            answer = rag_search("citations", query, limit)
+            print_answer(answer)
         case _:
             parser.print_help()
+
+
+def print_answer(answer: dict):
+    print("\nSearch Results:")
+    for doc in answer["results"]:
+        print(f" - {doc['title']}")
+    print("\n RAG Response:")
+    print(f" {answer['response']}")
 
 
 if __name__ == "__main__":

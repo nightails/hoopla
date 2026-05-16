@@ -5,6 +5,7 @@ from sentence_transformers import CrossEncoder
 from dotenv import load_dotenv
 from google import genai
 
+
 def enhance_query(method: str, query: str):
     client = load_llm()
     match method:
@@ -56,6 +57,7 @@ def enhance_query(method: str, query: str):
     resp = prompt_gemini(client, message)
     return resp.text
 
+
 def rerank(method: str, query: str, docs: list[dict], limit: int = 5) -> list[dict]:
     client = load_llm()
     match method:
@@ -79,8 +81,8 @@ def rerank(method: str, query: str, docs: list[dict], limit: int = 5) -> list[di
                 resp = prompt_gemini(client, message)
                 score_text = (resp.text or "").strip()
                 score = int(score_text)
-                docs[i]["rerank"] = score 
-                
+                docs[i]["rerank"] = score
+
                 time.sleep(20)
 
             docs.sort(key=lambda x: x["rerank"], reverse=True)
@@ -114,14 +116,16 @@ def rerank(method: str, query: str, docs: list[dict], limit: int = 5) -> list[di
                 if rank is None:
                     docs[i]["rerank"] = len(docs)
                     continue
-                docs[i]["rerank"] = rank 
+                docs[i]["rerank"] = rank
 
             docs.sort(key=lambda x: x["rerank"])
 
         case "cross_encoder":
             pairs = []
             for doc in docs:
-                pairs.append([query, f"{doc.get('title', '')} - {doc.get('document', '')}"])
+                pairs.append(
+                    [query, f"{doc.get('title', '')} - {doc.get('document', '')}"]
+                )
             cross_encoder = CrossEncoder("cross-encoder/ms-marco-TinyBERT-L2-v2")
             scores = cross_encoder.predict(pairs)
             for i, score in enumerate(scores):
@@ -130,12 +134,11 @@ def rerank(method: str, query: str, docs: list[dict], limit: int = 5) -> list[di
 
     return docs[:limit]
 
+
 def evaluate(query: str, current_results: list) -> list:
     formatted_results = []
     for i, r in enumerate(current_results, start=1):
-        formatted_results.append(
-            f"{i}. {r["title"]}: {r["document"]}"
-        )
+        formatted_results.append(f"{i}. {r['title']}: {r['document']}")
 
     client = load_llm()
     message = f"""Rate how relevant each result is to this query on a 0-3 scale:
@@ -163,15 +166,17 @@ def evaluate(query: str, current_results: list) -> list:
 
     results = []
     for rank, result in zip(ranks, current_results):
-        results.append({
-            "title": result["title"],
-            "rank": rank,
-        })
+        results.append(
+            {
+                "title": result["title"],
+                "rank": rank,
+            }
+        )
 
     return results
 
 
-def load_llm():
+def load_llm() -> genai.Client:
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -179,9 +184,6 @@ def load_llm():
 
     return genai.Client(api_key=api_key)
 
-def prompt_gemini(client, message):
-    return client.models.generate_content(
-        model = 'gemma-4-31b-it',
-        contents = message
-    )
 
+def prompt_gemini(client, message):
+    return client.models.generate_content(model="gemma-4-31b-it", contents=message)
